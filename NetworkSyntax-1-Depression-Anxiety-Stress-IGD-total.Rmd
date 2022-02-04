@@ -1,0 +1,78 @@
+---
+title: "DanielVas04022022"
+author: "Network"
+date: "04/02/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages("bootnet") #https://cran.r-project.org/web/packages/bootnet/index.html
+#install.packages("qgraph") #https://cran.r-project.org/web/packages/qgraph/index.html
+#install.packages("glasso") #https://cran.r-project.org/web/packages/glasso/index.html
+#install.packages("codebook") #https://cran.r-project.org/web/packages/glasso/index.html
+#install.packages("psychTools")
+```
+
+```{r echo=FALSE, warning=FALSE,  include = FALSE}
+library(tidyverse)
+library(bootnet)
+library(qgraph)
+```
+Data loading
+
+```{r}
+data<-haven::read_sav("dataset.sav")%>%
+  mutate_if(is.character, as.factor) 
+data_sna<- data%>%
+  select(GamingTotal, Depression, Anxiety, Stress)
+```
+The variables of interest for the user avatar bond are the following:
+
+**GamingTotal**= Internet Gaming Disorder Symptoms Total 
+
+**Depression**= Low Mood 
+**Anxiety**= Anxious symptoms assessed via DASS-21
+
+**Stress**= Stress symptoms assessed via DASS-21
+
+
+```{r warning=FALSE}
+#estimated network
+network <- estimateNetwork(data_sna, 
+                           default = "EBICglasso",
+                           corMethod = "cor_auto",
+                           tuning = 0.5)
+print(network)
+plot(network, layout='spring')
+network$graph
+```
+
+
+centrality
+```{r}
+centrality(network)
+centralityPlot(network)
+```
+Simulation
+
+```{r}
+simRes <- netSimulator(network$graph,
+                       dataGenerator = ggmGenerator(
+                         ordinal =TRUE, 
+                         nLevels = 5),
+                       default = "EBICglasso",
+                       nCases = c(100,250,500,1000,2500),
+                       tuning = 0.5,
+                       nReps = 100,
+                       nCores = 8)
+simRes
+plot(simRes)
+plot(simRes,yvar = c("strength","closeness","betweenness"))
+```
+
+
+
+```{r}
+boot1 <- bootnet(network, nCores = 8, nBoots = 1000, type = "nonparametric")
+boot2 <- bootnet(network, nCores = 8, nBoots = 1000, type = "case")
