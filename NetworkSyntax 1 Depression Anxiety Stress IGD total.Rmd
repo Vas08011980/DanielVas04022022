@@ -18,6 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(bootnet)
 library(qgraph)
+library (haven)
 ```
 Data loading
 
